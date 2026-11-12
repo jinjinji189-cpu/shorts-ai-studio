@@ -804,3 +804,5 @@ if dashboard_path.exists():
     )
 
     print("쇼츠 AI 스튜디오 3.0 승인 기능 추가 완료")
+
+
