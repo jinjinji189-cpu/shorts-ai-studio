@@ -3027,5 +3027,332 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
+
+<style>
+.ai-maker {
+    background: #f0f5ff;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 18px;
+    color: #172554;
+}
+.ai-maker h3 {
+    margin-top: 0;
+    color: #172554;
+}
+.ai-maker label {
+    display: block;
+    margin: 12px 0 5px;
+    font-size: 14px;
+    font-weight: bold;
+}
+.ai-maker select,
+.ai-maker textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+    color: #222;
+    font-size: 14px;
+}
+.ai-maker textarea {
+    min-height: 160px;
+    resize: vertical;
+}
+.ai-maker button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border: 0;
+    border-radius: 9px;
+    font-size: 15px;
+    cursor: pointer;
+    color: white;
+    background: #2563eb;
+}
+.ai-maker .ai-copy {
+    background: #475569;
+}
+.ai-maker .ai-open {
+    background: #172554;
+}
+.ai-maker .ai-note {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const heading = document.querySelector("h1");
+
+    if (heading) {
+        heading.textContent = "쇼츠 AI 스튜디오 4.0";
+    }
+
+    document.title = "쇼츠 AI 스튜디오 4.0";
+
+    const channels = [
+        "중식 순삭",
+        "냠냠 레시피",
+        "타이완 냠냠",
+        "마살라 골목",
+        "뷰티 꿀팁",
+        "지구의 이웃들",
+        "초록 프레임",
+        "오늘의 생활팁",
+        "고쳐사는 집",
+        "손끝의 뜨개교실",
+        "퇴근 후 철학",
+        "마음 한 스푼",
+        "중국 핫캐치",
+        "중국 도매시장",
+        "대륙 산책",
+        "느긋한 야영생활",
+        "Korean Food Heaven",
+        "성경과 커피 사이",
+        "기타 채널"
+    ];
+
+    const cards = document.querySelectorAll(".card");
+
+    cards.forEach(function(card) {
+
+        if (card.querySelector(".ai-maker")) return;
+
+        const link = card.querySelector(
+            'a[href*="youtube.com/watch"]'
+        );
+
+        if (!link) return;
+
+        const videoUrl = link.href;
+
+        const videoId = new URL(videoUrl)
+            .searchParams.get("v");
+
+        if (!videoId) return;
+
+        const titleElement = card.querySelector("h3");
+
+        const originalTitle = titleElement
+            ? titleElement.textContent.trim()
+            : "";
+
+        const maker = document.createElement("div");
+
+        maker.className = "ai-maker";
+
+        maker.innerHTML = `
+            <h3>AI 콘텐츠 제작실</h3>
+
+            <label>운영 채널 선택</label>
+            <select class="ai-channel"></select>
+
+            <label>영상 길이</label>
+            <select class="ai-duration">
+                <option value="30초">30초 쇼츠</option>
+                <option value="45초">45초 쇼츠</option>
+                <option value="60초">60초 쇼츠</option>
+                <option value="90초">90초 쇼츠</option>
+            </select>
+
+            <label>콘텐츠 스타일</label>
+            <select class="ai-style">
+                <option>흥미롭고 몰입감 있는 스타일</option>
+                <option>감성적이고 철학적인 스타일</option>
+                <option>전문적이고 정보 중심 스타일</option>
+                <option>재미있고 유쾌한 스타일</option>
+                <option>따뜻하고 힐링되는 스타일</option>
+            </select>
+
+            <label>영상 내용 또는 제작 메모</label>
+            <textarea class="ai-memo"
+                placeholder="영상에서 확인한 장면, 핵심 내용, 강조하고 싶은 부분을 입력하세요."></textarea>
+
+            <button class="ai-generate">
+                AI 제작 요청서 만들기
+            </button>
+
+            <label>ChatGPT 제작 요청서</label>
+            <textarea class="ai-output"
+                placeholder="제작 요청서가 여기에 표시됩니다."
+                readonly></textarea>
+
+            <button class="ai-copy">
+                제작 요청서 복사
+            </button>
+
+            <button class="ai-open">
+                ChatGPT 열기
+            </button>
+
+            <p class="ai-note">
+                요청서를 복사한 후 ChatGPT에 붙여넣으세요.
+                한국어 제목, 내레이션, 설명문,
+                해시태그를 제작할 수 있습니다.
+                원본 영상의 사용 권한은 별도로 확인하세요.
+            </p>
+        `;
+
+        const channelSelect = maker.querySelector(
+            ".ai-channel"
+        );
+
+        channels.forEach(function(name) {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            channelSelect.appendChild(option);
+        });
+
+        const duration = maker.querySelector(".ai-duration");
+        const style = maker.querySelector(".ai-style");
+        const memo = maker.querySelector(".ai-memo");
+        const output = maker.querySelector(".ai-output");
+
+        const storageKey = "shorts_v4_" + videoId;
+
+        try {
+            const saved = JSON.parse(
+                localStorage.getItem(storageKey) || "{}"
+            );
+
+            if (saved.channel) {
+                channelSelect.value = saved.channel;
+            }
+
+            if (saved.duration) {
+                duration.value = saved.duration;
+            }
+
+            if (saved.style) {
+                style.value = saved.style;
+            }
+
+            if (saved.memo) {
+                memo.value = saved.memo;
+            }
+
+            if (saved.output) {
+                output.value = saved.output;
+            }
+
+        } catch (e) {}
+
+        function saveMaker() {
+
+            try {
+                localStorage.setItem(
+                    storageKey,
+                    JSON.stringify({
+                        channel: channelSelect.value,
+                        duration: duration.value,
+                        style: style.value,
+                        memo: memo.value,
+                        output: output.value
+                    })
+                );
+            } catch (e) {}
+        }
+
+        maker.querySelector(".ai-generate")
+            .addEventListener("click", function () {
+
+                const koreanTitleInput =
+                    card.querySelector(".korean-title");
+
+                const koreanTitle = koreanTitleInput
+                    ? koreanTitleInput.value
+                    : "";
+
+                output.value = [
+                    "당신은 한국 유튜브 쇼츠 전문 콘텐츠 작가입니다.",
+                    "",
+                    "[콘텐츠 정보]",
+                    "운영 채널: " + channelSelect.value,
+                    "원본 제목: " + originalTitle,
+                    "한국어 제목 후보: " + koreanTitle,
+                    "원본 영상 링크: " + videoUrl,
+                    "영상 길이: " + duration.value,
+                    "제작 스타일: " + style.value,
+                    "영상 내용 및 메모: " + memo.value,
+                    "",
+                    "[제작 요청]",
+                    "1. 클릭을 유도하는 한국어 제목 5개",
+                    "2. 첫 3초에 사용할 강렬한 후킹 문구",
+                    "3. 영상 길이에 맞춘 한국어 내레이션",
+                    "4. 장면별 자막과 시간 구성",
+                    "5. 유튜브 영상 설명문",
+                    "6. 관련 해시태그 10개",
+                    "7. 추천 썸네일 문구 3개",
+                    "8. 시청자의 댓글을 유도하는 마지막 문장",
+                    "",
+                    "[주의사항]",
+                    "원본을 그대로 번역하거나 복제하지 말고",
+                    "독창적인 해설과 새로운 관점을 추가하세요.",
+                    "실제로 확인하지 않은 영상 장면이나",
+                    "사실을 지어내지 마세요.",
+                    "영상 내용이 부족하면 먼저 필요한 정보를 질문하세요.",
+                    "저작권과 상업적 재사용 권한을 확인해야 합니다.",
+                    "모든 결과는 한국어로 작성하세요."
+                ].join(String.fromCharCode(10));
+
+                saveMaker();
+
+                this.textContent = "제작 요청서 생성 완료";
+
+            });
+
+        maker.querySelector(".ai-copy")
+            .addEventListener("click", async function () {
+
+                if (!output.value) {
+                    alert("먼저 제작 요청서를 만들어 주세요.");
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(
+                        output.value
+                    );
+
+                    this.textContent = "복사 완료!";
+
+                } catch (e) {
+
+                    output.focus();
+                    output.select();
+
+                    alert("텍스트를 선택한 후 직접 복사해 주세요.");
+                }
+            });
+
+        maker.querySelector(".ai-open")
+            .addEventListener("click", function () {
+
+                window.open(
+                    "https://chatgpt.com/",
+                    "_blank",
+                    "noopener,noreferrer"
+                );
+            });
+
+        channelSelect.addEventListener("change", saveMaker);
+        duration.addEventListener("change", saveMaker);
+        style.addEventListener("change", saveMaker);
+        memo.addEventListener("change", saveMaker);
+
+        card.appendChild(maker);
+
+    });
+
+});
+</script>
 </body>
 </html>
