@@ -479,3 +479,328 @@ refresh();
 
 print(f"검색 완료: {len(results)}개 발견")
 print(f"누적 영상: {len(archive)}개")
+
+
+
+# ==========================================
+# 쇼츠 AI 스튜디오 3.0 - 모바일 승인 기능
+# ==========================================
+
+approval_code = """
+<style>
+.approval-panel {
+    background: white;
+    padding: 18px;
+    border-radius: 14px;
+    margin: 18px 0;
+}
+.approval-stats {
+    display: flex;
+    gap: 10px;
+    margin: 12px 0;
+}
+.approval-stat {
+    flex: 1;
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+}
+.approval-stat strong {
+    display: block;
+    font-size: 26px;
+}
+.video-thumb {
+    width: 100%;
+    border-radius: 10px;
+    margin: 10px 0;
+}
+.approval-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+.approval-buttons button {
+    flex: 1;
+    padding: 12px 8px;
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.approve-btn {
+    background: #16a34a;
+    color: white;
+}
+.hold-btn {
+    background: #f59e0b;
+    color: white;
+}
+.reject-btn {
+    background: #ef4444;
+    color: white;
+}
+.video-status {
+    padding: 8px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+.korean-title {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+#approval-filter {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const storageKey = "shorts_studio_approvals_v3";
+    let saved = {};
+
+    try {
+        saved = JSON.parse(
+            localStorage.getItem(storageKey) || "{}"
+        );
+    } catch (e) {
+        saved = {};
+    }
+
+    const cards = Array.from(
+        document.querySelectorAll(".card")
+    );
+
+    const panel = document.createElement("div");
+    panel.className = "approval-panel";
+
+    panel.innerHTML = `
+        <h2>나의 제작 관리</h2>
+        <div class="approval-stats">
+            <div class="approval-stat">
+                <strong id="total-count">0</strong>
+                전체
+            </div>
+            <div class="approval-stat">
+                <strong id="approved-count">0</strong>
+                승인
+            </div>
+            <div class="approval-stat">
+                <strong id="hold-count">0</strong>
+                보류
+            </div>
+        </div>
+
+        <select id="approval-filter">
+            <option value="all">전체 영상 보기</option>
+            <option value="검토 대기">검토 대기</option>
+            <option value="제작 승인">제작 승인</option>
+            <option value="보류">보류 영상</option>
+            <option value="제외">제외 영상</option>
+        </select>
+
+        <p style="font-size:12px;color:#64748b">
+            승인 정보는 현재 브라우저에 저장됩니다.
+        </p>
+    `;
+
+    const heading = document.querySelector("h1");
+
+    if (heading) {
+        heading.after(panel);
+    } else {
+        document.body.prepend(panel);
+    }
+
+    function saveData() {
+        try {
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify(saved)
+            );
+            return true;
+        } catch (e) {
+            alert("저장할 수 없습니다. 브라우저 설정을 확인하세요.");
+            return false;
+        }
+    }
+
+    function updateCounts() {
+
+        const ids = cards
+            .map(c => c.dataset.videoId)
+            .filter(Boolean);
+
+        document.getElementById("total-count")
+            .textContent = ids.length;
+
+        document.getElementById("approved-count")
+            .textContent = ids.filter(
+                id => saved[id]?.status === "제작 승인"
+            ).length;
+
+        document.getElementById("hold-count")
+            .textContent = ids.filter(
+                id => saved[id]?.status === "보류"
+            ).length;
+    }
+
+    function applyFilter() {
+
+        const filter = document.getElementById(
+            "approval-filter"
+        ).value;
+
+        cards.forEach(card => {
+
+            const id = card.dataset.videoId;
+
+            const status =
+                saved[id]?.status || "검토 대기";
+
+            card.style.display =
+                filter === "all" || filter === status
+                ? ""
+                : "none";
+        });
+    }
+
+    cards.forEach(card => {
+
+        const link = card.querySelector(
+            'a[href*="youtube.com/watch"]'
+        );
+
+        if (!link) return;
+
+        const url = new URL(link.href);
+        const id = url.searchParams.get("v");
+
+        if (!id || !/^[a-zA-Z0-9_-]{11}$/.test(id)) return;
+
+        card.dataset.videoId = id;
+
+        if (!saved[id]) {
+            saved[id] = {
+                status: "검토 대기",
+                koreanTitle: ""
+            };
+        }
+
+        const img = document.createElement("img");
+
+        img.className = "video-thumb";
+        img.loading = "lazy";
+        img.alt = "영상 썸네일";
+        img.src =
+            "https://i.ytimg.com/vi/" +
+            id + "/hqdefault.jpg";
+
+        card.prepend(img);
+
+        const titleInput = document.createElement("input");
+
+        titleInput.className = "korean-title";
+        titleInput.placeholder = "한국어 제작 제목 입력";
+        titleInput.value = saved[id].koreanTitle || "";
+
+        titleInput.addEventListener("change", function () {
+            saved[id].koreanTitle = this.value;
+            saveData();
+        });
+
+        card.appendChild(titleInput);
+
+        const statusBox = document.createElement("div");
+        statusBox.className = "video-status";
+        statusBox.textContent =
+            "현재 상태: " + saved[id].status;
+
+        card.appendChild(statusBox);
+
+        const buttons = document.createElement("div");
+        buttons.className = "approval-buttons";
+
+        const options = [
+            ["제작 승인", "approve-btn"],
+            ["보류", "hold-btn"],
+            ["제외", "reject-btn"]
+        ];
+
+        options.forEach(function(option) {
+
+            const button = document.createElement("button");
+
+            button.textContent = option[0];
+            button.className = option[1];
+
+            button.addEventListener("click", function() {
+
+                if (option[0] === "제작 승인") {
+
+                    const confirmed = confirm(
+                        "원본 영상의 재편집 권한과 음악 등 제3자 권리를 확인하셨나요?"
+                    );
+
+                    if (!confirmed) return;
+                }
+
+                const previous = saved[id].status;
+                saved[id].status = option[0];
+
+                if (!saveData()) {
+                    saved[id].status = previous;
+                    return;
+                }
+
+                statusBox.textContent =
+                    "현재 상태: " + option[0];
+
+                updateCounts();
+                applyFilter();
+            });
+
+            buttons.appendChild(button);
+        });
+
+        card.appendChild(buttons);
+    });
+
+    document.getElementById(
+        "approval-filter"
+    ).addEventListener("change", applyFilter);
+
+    updateCounts();
+});
+</script>
+"""
+
+dashboard_path = Path("docs/index.html")
+
+if dashboard_path.exists():
+    dashboard_html = dashboard_path.read_text(
+        encoding="utf-8"
+    )
+
+    dashboard_html = dashboard_html.replace(
+        "</body>",
+        approval_code + "</body>",
+        1
+    )
+
+    dashboard_path.write_text(
+        dashboard_html,
+        encoding="utf-8"
+    )
+
+    print("쇼츠 AI 스튜디오 3.0 승인 기능 추가 완료")
