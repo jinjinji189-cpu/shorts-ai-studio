@@ -806,3 +806,161 @@ if dashboard_path.exists():
     print("쇼츠 AI 스튜디오 3.0 승인 기능 추가 완료")
 
 
+
+# ==========================================
+# 쇼츠 AI 스튜디오 3.1 - 디자인 및 승인 개선
+# ==========================================
+
+upgrade_code = """
+<style>
+.approval-panel {
+    background: #ffffff !important;
+    color: #172554 !important;
+    padding: 20px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.approval-panel h2 {
+    color: #172554 !important;
+    font-size: 22px;
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.approval-stat {
+    background: #eef2ff !important;
+    color: #172554 !important;
+}
+
+.approval-stat strong {
+    color: #2563eb !important;
+    font-size: 28px;
+}
+
+#approval-filter {
+    background: #ffffff !important;
+    color: #172554 !important;
+    font-size: 16px;
+    border: 1px solid #cbd5e1;
+}
+
+.video-status {
+    color: #334155 !important;
+    background: #f1f5f9 !important;
+    font-weight: 600;
+}
+
+.approval-buttons button {
+    min-height: 48px;
+    font-weight: 600;
+}
+
+.korean-title {
+    font-size: 16px;
+    min-height: 44px;
+    color: #222222 !important;
+    background: #ffffff !important;
+}
+
+.video-thumb {
+    max-height: 320px;
+    object-fit: contain;
+    background: #f1f5f9;
+}
+
+@media (max-width: 600px) {
+    .approval-panel {
+        padding: 14px !important;
+    }
+
+    .approval-stats {
+        gap: 6px;
+    }
+
+    .approval-stat {
+        padding: 10px 5px;
+        font-size: 13px;
+    }
+
+    .approval-stat strong {
+        font-size: 24px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.title = "쇼츠 AI 스튜디오 3.1";
+
+    const heading = document.querySelector("h1");
+
+    if (heading) {
+        heading.textContent = "쇼츠 AI 스튜디오 3.1";
+    }
+
+    const panel = document.querySelector(".approval-panel");
+
+    if (panel) {
+        const title = panel.querySelector("h2");
+
+        if (title) {
+            title.textContent = "나의 제작 관리";
+        }
+    }
+
+    document.querySelectorAll(".card").forEach(function(card) {
+
+        const approveButton = card.querySelector(".approve-btn");
+
+        if (!approveButton) return;
+
+        approveButton.addEventListener("click", function(event) {
+
+            const checks = Array.from(
+                card.querySelectorAll('input[type="checkbox"]')
+            );
+
+            if (
+                checks.length < 2 ||
+                !checks.every(check => check.checked)
+            ) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                alert(
+                    "원본 영상의 재편집 권한과 음악 등 제3자 권리를 먼저 확인하고 체크해 주세요."
+                );
+
+                return;
+            }
+
+        }, true);
+
+    });
+
+});
+</script>
+"""
+
+dashboard_path = Path("docs/index.html")
+
+if dashboard_path.exists():
+
+    dashboard_html = dashboard_path.read_text(
+        encoding="utf-8"
+    )
+
+    dashboard_html = dashboard_html.replace(
+        "</body>",
+        upgrade_code + "</body>",
+        1
+    )
+
+    dashboard_path.write_text(
+        dashboard_html,
+        encoding="utf-8"
+    )
+
+    print("쇼츠 AI 스튜디오 3.1 업그레이드 완료")
