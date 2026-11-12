@@ -1,8 +1,9 @@
-
 import os
 import json
 import html
 import urllib.request
+import urllib.error
+import time
 import urllib.parse
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -79,17 +80,30 @@ for item in archive:
     seen.add(item["id"])
 
 def youtube_api(endpoint, params):
-    params["key"] = API_KEY
+    params = {**params, "key": API_KEY}
     url = (
         "https://www.googleapis.com/youtube/v3/"
         + endpoint + "?"
         + urllib.parse.urlencode(params)
     )
-
-    with urllib.request.urlopen(
-        url, timeout=30
-    ) as response:
-        return json.load(response)
+    for attempt in range(3):
+        time.sleep(1)
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
+                raise RuntimeError(
+                    f"YouTube API {endpoint}: HTTP {exc.code}"
+                ) from None
+            delay = 15 * (2 ** attempt)
+            retry = exc.headers.get("Retry-After", "")
+            if retry.isdigit():
+                delay = max(delay, int(retry))
+            if delay > 120:
+                raise RuntimeError("YouTube API: retry later") from None
+            print(f"YouTube API {endpoint}: HTTP {exc.code}; retry in {delay}s", flush=True)
+            time.sleep(delay)
 
 today = datetime.now(timezone.utc)
 
