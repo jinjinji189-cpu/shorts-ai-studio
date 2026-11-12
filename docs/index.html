@@ -5,92 +5,1834 @@
 <meta charset="UTF-8">
 <meta name="viewport"
  content="width=device-width, initial-scale=1">
-<title>쇼츠 AI 스튜디오</title>
+<title>쇼츠 AI 스튜디오 2.0</title>
 <style>
 body {
  font-family: sans-serif;
  background: #f4f6f9;
  color: #222;
- margin: 20px;
+ margin: 16px;
+}
+main {
+ max-width: 850px;
+ margin: auto;
+}
+header {
+ background: #172554;
+ color: white;
+ padding: 22px;
+ border-radius: 18px;
+ margin-bottom: 16px;
+}
+.stats {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 8px;
+}
+.stat {
+ background: white;
+ color: #172554;
+ border-radius: 10px;
+ padding: 12px 6px;
+ text-align: center;
+ font-size: 13px;
+}
+.stat b {
+ display: block;
+ font-size: 24px;
 }
 .card {
  background: white;
  padding: 18px;
  margin-bottom: 15px;
- border-radius: 12px;
+ border-radius: 14px;
+}
+.thumb {
+ width: 100%;
+ border-radius: 10px;
+ margin-top: 12px;
 }
 small { color: #2563eb; }
-a {
+a, button {
  display: inline-block;
  background: #2563eb;
  color: white;
- padding: 10px 16px;
+ padding: 12px 16px;
  border-radius: 8px;
+ border: none;
  text-decoration: none;
+ font-size: 15px;
+ cursor: pointer;
 }
+button.approve {
+ width: 100%;
+ background: #166534;
+ margin-top: 14px;
+}
+.check {
+ display: block;
+ padding: 9px 0;
+ font-size: 14px;
+}
+.license {
+ background: #fef3c7;
+ padding: 7px;
+ border-radius: 6px;
+ font-size: 13px;
+}
+select {
+ width: 100%;
+ padding: 12px;
+ border: 1px solid #ddd;
+ border-radius: 8px;
+ margin-bottom: 14px;
+ font-size: 16px;
+}
+.state { color: #166534; }
 </style>
 </head>
 <body>
-<h1>쇼츠 AI 스튜디오</h1>
-<p>해외 인기 영상 자동 발굴</p>
-<p>오늘 발견: 5개</p>
-<p>조회수 100만 이상 / CC 후보</p>
+<main>
+<header>
+<h1>쇼츠 AI 스튜디오 2.0</h1>
+<p>해외 인기 콘텐츠 제작 관리</p>
+
+<div class="stats">
+ <div class="stat">
+  <b>27</b>오늘 발견
+ </div>
+ <div class="stat">
+  <b>32</b>누적 영상
+ </div>
+ <div class="stat">
+  <b id="queueCount">0</b>제작 대기
+ </div>
+</div>
+<p>업데이트: 2026-11-12</p>
+</header>
+
+<p>조회수 100만 이상 · CC 후보</p>
 <p>저작권 최종 확인 후 사용하세요.</p>
 
-    <div class="card">
-      <small>철학·명언</small>
+<select id="filter" onchange="filterCards()">
+ <option value="all">전체 영상</option>
+ <option value="요리·디저트">요리·디저트</option>
+ <option value="뷰티">뷰티</option>
+ <option value="동물·자연">동물·자연</option>
+ <option value="생활 꿀팁">생활 꿀팁</option>
+ <option value="철학·명언">철학·명언</option>
+ <option value="중국 인기 콘텐츠">중국 인기 콘텐츠</option>
+ <option value="여행·문화">여행·문화</option>
+ <option value="approved">제작 대기 영상</option>
+</select>
+
+
+    <div class="card"
+         data-category="동물·자연"
+         data-id="jtkBp_L3LNU">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/jtkBp_L3LNU/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>The cat after the second spit 🥺</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>The cat after the second spit 🥺</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 25,289,824회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=jtkBp_L3LNU" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="x7m0bM3oehA">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/x7m0bM3oehA/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>The ultimate trend winner! 👑😹</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>The ultimate trend winner! 👑😹</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 19,774,275회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=x7m0bM3oehA" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="TQrX29x3fTk">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/TQrX29x3fTk/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Instant recognition! 🥹</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Instant recognition! 🥹</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 19,124,107회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=TQrX29x3fTk" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="8IYWJiho1fQ">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/8IYWJiho1fQ/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>What was the reason for this? 👀</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>What was the reason for this? 👀</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 15,808,781회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=8IYWJiho1fQ" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="3tLWpXTvuyI">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/3tLWpXTvuyI/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Just WASHED! Don’t touch! 😾</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Just WASHED! Don’t touch! 😾</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 15,479,238회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=3tLWpXTvuyI" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="FlBtkxh_XvQ">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/FlBtkxh_XvQ/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Cat after looking for an apartment to move 😺</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Cat after looking for an apartment to move 😺</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 10,254,763회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=FlBtkxh_XvQ" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="3YVtMMK1Uoc">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/3YVtMMK1Uoc/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>What was this cat trying to do 🤔🐾</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>What was this cat trying to do 🤔🐾</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 10,250,574회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=3YVtMMK1Uoc" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="SisreHxY2Xg">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/SisreHxY2Xg/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>LOVES doing this every single time! 😾 cr: 虎子不是闹闹</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>LOVES doing this every single time! 😾 cr: 虎子不是闹闹</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 9,680,871회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=SisreHxY2Xg" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="qU27HskLL08">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/qU27HskLL08/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>애니멀 호스피털 🤣 역대급 틱톡 영상 모음!!! #animalhospital #animalhospitalanomaly #roblox</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Animal Hospital 🤣 BEST TikTok CLIPS!!! #animalhospital #animalhospitalanomaly #roblox</p>
+      </details>
+
+      <p>채널: BloxyLife</p>
+      <p>조회수: 8,383,324회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=qU27HskLL08" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="T8iDqnCmp-4">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/T8iDqnCmp-4/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Zero DOUBT, 100% justified cat action! 😼</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Zero DOUBT, 100% justified cat action! 😼</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 7,809,302회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=T8iDqnCmp-4" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="뷰티"
+         data-id="E2qYBaEDXUU">
+
+      <small>뷰티 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/E2qYBaEDXUU/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>혼란스러운 핑크 헤어다이 변신 😅</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Chaotic pink hair dye transformation 😅</p>
+      </details>
+
+      <p>채널: Brad Mondo</p>
+      <p>조회수: 6,799,021회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=E2qYBaEDXUU" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="o2voOaJJFjU">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/o2voOaJJFjU/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>I think she is his wife 😂</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>I think she is his wife 😂</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 5,241,127회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=o2voOaJJFjU" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="JBCYDhGRfhI">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/JBCYDhGRfhI/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>FITS inside the jar, plays forever! 😸</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>FITS inside the jar, plays forever! 😸</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 4,740,371회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=JBCYDhGRfhI" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="f9ZtVeTaO3A">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/f9ZtVeTaO3A/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>가장 귀여운 바다 동물 순위</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Ranking Cutest Sea Animals</p>
+      </details>
+
+      <p>채널: Larry Ranks</p>
+      <p>조회수: 4,145,739회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=f9ZtVeTaO3A" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="oZ_I5dy4gn0">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/oZ_I5dy4gn0/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Mid flight kitten thank you! 🥹</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Mid flight kitten thank you! 🥹</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 3,954,130회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=oZ_I5dy4gn0" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="9MVnV7TO6x8">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/9MVnV7TO6x8/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Strictly watch until the end! 👀</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Strictly watch until the end! 👀</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 3,690,682회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=9MVnV7TO6x8" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="z0kEIEyZTew">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/z0kEIEyZTew/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Sheep have no chill (wait for it) 😂🐑#funny #shorts</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Sheep have no chill (wait for it) 😂🐑#funny #shorts</p>
+      </details>
+
+      <p>채널: zZaxe</p>
+      <p>조회수: 3,606,679회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=z0kEIEyZTew" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="mhwfWrAQaIM">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/mhwfWrAQaIM/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Cutest Hamster Moments #20</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Cutest Hamster Moments #20</p>
+      </details>
+
+      <p>채널: DefinitelyNotXavi</p>
+      <p>조회수: 2,212,057회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=mhwfWrAQaIM" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="뷰티"
+         data-id="NihG9-MfUQo">
+
+      <small>뷰티 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/NihG9-MfUQo/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>셀프 염색으로 &#x27;쿤 테일&#x27; 헤어스타일에 도전했다가 대박 난 변신 과정! 💖✨</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>She Tried DIY Hair Dye with Coon Tails, and the Final Look is Amazing! 💖✨</p>
+      </details>
+
+      <p>채널: Brad Mondo</p>
+      <p>조회수: 2,061,693회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=NihG9-MfUQo" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="뷰티"
+         data-id="wz6Ebh56Zu8">
+
+      <small>뷰티 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/wz6Ebh56Zu8/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>가장 놀라운 빨간 머리 변신 전후</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>CRAZIEST Before &amp; After Red Hair Transformation</p>
+      </details>
+
+      <p>채널: Brad Mondo</p>
+      <p>조회수: 1,856,366회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=wz6Ebh56Zu8" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="Y9S_C-JBVMY">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/Y9S_C-JBVMY/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Dieses süße Tier ist der kälteste Killer der Natur</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Dieses süße Tier ist der kälteste Killer der Natur</p>
+      </details>
+
+      <p>채널: wissensweb</p>
+      <p>조회수: 1,753,278회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=Y9S_C-JBVMY" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="nj2K1Xbc4qs">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/nj2K1Xbc4qs/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>RIGHT cat is totally in the right! 😾</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>RIGHT cat is totally in the right! 😾</p>
+      </details>
+
+      <p>채널: Pawcsu</p>
+      <p>조회수: 1,708,570회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=nj2K1Xbc4qs" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="7BOM8_y_eTE">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/7BOM8_y_eTE/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>Funny and hilarious cat moments with soulful music.</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Funny and hilarious cat moments with soulful music.</p>
+      </details>
+
+      <p>채널: O... Mister</p>
+      <p>조회수: 1,423,355회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=7BOM8_y_eTE" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="뷰티"
+         data-id="IZx9ezz8Irs">
+
+      <small>뷰티 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/IZx9ezz8Irs/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>탈색하다 머리카락이 녹아버렸어요!</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Her Hair Turned MUSHY From Bleach!</p>
+      </details>
+
+      <p>채널: Brad Mondo</p>
+      <p>조회수: 1,226,816회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=IZx9ezz8Irs" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="동물·자연"
+         data-id="pJE7uJylMBk">
+
+      <small>동물·자연 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/pJE7uJylMBk/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>にゃんこはエイリアンの友達? 냥이 친구는 외계인? Is your cat friend an alien? #cat #やせる #funny #funny #wwe #memes #animals</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>にゃんこはエイリアンの友達? 냥이 친구는 외계인? Is your cat friend an alien? #cat #やせる #funny #funny #wwe #memes #animals</p>
+      </details>
+
+      <p>채널: 愛ちゃん</p>
+      <p>조회수: 1,108,808회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=pJE7uJylMBk" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="뷰티"
+         data-id="ZD8M3CJRHbY">
+
+      <small>뷰티 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/ZD8M3CJRHbY/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>화제의 거품형 염색약?!</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>VIRAL FOAM HAIR DYE?!</p>
+      </details>
+
+      <p>채널: Brad Mondo</p>
+      <p>조회수: 1,068,025회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=ZD8M3CJRHbY" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="뷰티"
+         data-id="Yp-jl1a1NWo">
+
+      <small>뷰티 · 2026-11-12</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/Yp-jl1a1NWo/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
+      <h3>셀프 염색 대변신: 과연 성공했을까?! 💜💚</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>DIY HAIR DYE TRANSFORMATION: DID IT WORK?! 💜💚</p>
+      </details>
+
+      <p>채널: Brad Mondo</p>
+      <p>조회수: 1,007,207회</p>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=Yp-jl1a1NWo" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
+    </div>
+    
+    <div class="card"
+         data-category="철학·명언"
+         data-id="de2960LdbVI">
+
+      <small>철학·명언 · 이전 검색</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/de2960LdbVI/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
       <h3>“One Sentence Changed His Life |Sant Tulsidas Story” #upanishads #tulsidas #sanatandharma #shorts</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>“One Sentence Changed His Life |Sant Tulsidas Story” #upanishads #tulsidas #sanatandharma #shorts</p>
+      </details>
+
       <p>채널: Krishna </p>
       <p>조회수: 28,208,387회</p>
-      <p>CC 표시 · 권리 검토 필요</p>
-      <a href="https://www.youtube.com/watch?v=de2960LdbVI" target="_blank">
-        원본 영상 보기
-      </a>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=de2960LdbVI" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
     </div>
     
-    <div class="card">
-      <small>요리·디저트</small>
+    <div class="card"
+         data-category="요리·디저트"
+         data-id="0pM1MpmkDtw">
+
+      <small>요리·디저트 · 이전 검색</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/0pM1MpmkDtw/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
       <h3>Is She Even REAL?! CHOCOLATE ICE CREAM Recipe at Home 🍫 #icecream #recipe</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Is She Even REAL?! CHOCOLATE ICE CREAM Recipe at Home 🍫 #icecream #recipe</p>
+      </details>
+
       <p>채널: Su and Jafar</p>
       <p>조회수: 6,946,698회</p>
-      <p>CC 표시 · 권리 검토 필요</p>
-      <a href="https://www.youtube.com/watch?v=0pM1MpmkDtw" target="_blank">
-        원본 영상 보기
-      </a>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=0pM1MpmkDtw" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
     </div>
     
-    <div class="card">
-      <small>뷰티</small>
+    <div class="card"
+         data-category="뷰티"
+         data-id="uF9EjwqWFeU">
+
+      <small>뷰티 · 이전 검색</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/uF9EjwqWFeU/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
       <h3>FLICKA Silk Touch Cream is hyped ?? #ashortaday</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>FLICKA Silk Touch Cream is hyped ?? #ashortaday</p>
+      </details>
+
       <p>채널: Kashika Chauhan</p>
       <p>조회수: 5,257,653회</p>
-      <p>CC 표시 · 권리 검토 필요</p>
-      <a href="https://www.youtube.com/watch?v=uF9EjwqWFeU" target="_blank">
-        원본 영상 보기
-      </a>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=uF9EjwqWFeU" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
     </div>
     
-    <div class="card">
-      <small>동물·자연</small>
+    <div class="card"
+         data-category="동물·자연"
+         data-id="wvmauRAtyLU">
+
+      <small>동물·자연 · 이전 검색</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/wvmauRAtyLU/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
       <h3>7 Momen Hewan Paling Menakjubkan yang Tertangkap Kamera!</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>7 Momen Hewan Paling Menakjubkan yang Tertangkap Kamera!</p>
+      </details>
+
       <p>채널: S.M.T</p>
       <p>조회수: 1,151,933회</p>
-      <p>CC 표시 · 권리 검토 필요</p>
-      <a href="https://www.youtube.com/watch?v=wvmauRAtyLU" target="_blank">
-        원본 영상 보기
-      </a>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=wvmauRAtyLU" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
     </div>
     
-    <div class="card">
-      <small>동물·자연</small>
+    <div class="card"
+         data-category="동물·자연"
+         data-id="knynl6dFonU">
+
+      <small>동물·자연 · 이전 검색</small>
+
+      <img class="thumb"
+       src="https://i.ytimg.com/vi/knynl6dFonU/hqdefault.jpg"
+       loading="lazy" alt="영상 미리보기">
+
       <h3>Amazing Animal Habitats! | Jack Hartmann</h3>
+
+      <details>
+        <summary>원본 제목</summary>
+        <p>Amazing Animal Habitats! | Jack Hartmann</p>
+      </details>
+
       <p>채널: Jack Hartmann Kids Music Channel</p>
       <p>조회수: 1,123,758회</p>
-      <p>CC 표시 · 권리 검토 필요</p>
-      <a href="https://www.youtube.com/watch?v=knynl6dFonU" target="_blank">
-        원본 영상 보기
-      </a>
+
+      <span class="license">
+        CC 표시 · 권리 검토 필요
+      </span>
+
+      <p>
+        <a href="https://www.youtube.com/watch?v=knynl6dFonU" target="_blank"
+           rel="noopener noreferrer">
+          원본 영상 및 권리 확인
+        </a>
+      </p>
+
+      <label class="check">
+        <input type="checkbox"
+         class="rights">
+        재편집·번역·상업적 이용 권한 확인
+      </label>
+
+      <label class="check">
+        <input type="checkbox"
+         class="music">
+        음악·이미지 등 제3자 권리 확인
+      </label>
+
+      <button class="approve"
+        onclick="approve(this)">
+        제작 대기 목록에 추가
+      </button>
+
+      <p class="state"></p>
     </div>
     
+
+</main>
+
+<script>
+let queue = [];
+
+try {
+ queue = JSON.parse(
+  localStorage.getItem("shortsQueue") || "[]"
+ );
+} catch(e) {
+ queue = [];
+}
+
+function refresh() {
+ document.getElementById("queueCount")
+ .textContent = queue.length;
+
+ document.querySelectorAll(".card")
+ .forEach(card => {
+  let approved = queue.includes(card.dataset.id);
+  card.querySelector(".state").textContent =
+   approved ? "제작 대기 등록됨 (이 기기)" : "";
+
+  card.querySelector(".approve").textContent =
+   approved ? "제작 대기 취소" :
+   "제작 대기 목록에 추가";
+
+  if(approved) {
+   card.querySelector(".rights").checked = true;
+   card.querySelector(".music").checked = true;
+  }
+ });
+}
+
+function approve(button) {
+ const card = button.closest(".card");
+ const id = card.dataset.id;
+
+ if(queue.includes(id)) {
+  queue = queue.filter(v => v !== id);
+ } else {
+  if(!card.querySelector(".rights").checked ||
+     !card.querySelector(".music").checked) {
+   alert("저작권 확인 항목 두 개를 먼저 체크하세요.");
+   return;
+  }
+  queue.push(id);
+ }
+
+ localStorage.setItem(
+  "shortsQueue", JSON.stringify(queue)
+ );
+
+ refresh();
+ filterCards();
+}
+
+function filterCards() {
+ const value = document.getElementById("filter").value;
+
+ document.querySelectorAll(".card")
+ .forEach(card => {
+  const show =
+   value === "all" ||
+   value === card.dataset.category ||
+   (value === "approved" &&
+    queue.includes(card.dataset.id));
+
+  card.style.display = show ? "" : "none";
+ });
+}
+
+refresh();
+</script>
 </body>
 </html>
