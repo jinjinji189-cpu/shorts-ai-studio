@@ -1,4 +1,3 @@
-
 name: Daily Shorts AI
 
 on:
@@ -16,7 +15,7 @@ concurrency:
 jobs:
   search:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -26,6 +25,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-nanum
 
       - name: Search YouTube
         env:
@@ -39,3 +43,28 @@ jobs:
           git add docs/
           git diff --cached --quiet || git commit -m "Update daily videos"
           git push
+
+      - name: Prepare test video
+        run: |
+          mkdir -p input output
+          ffmpeg -y -f lavfi \
+            -i color=c=black:s=1080x1920:r=30 \
+            -t 5 -c:v libx264 \
+            -pix_fmt yuv420p input/sample.mp4
+          printf '오늘도 새로운 시작입니다.\n당신의 가능성을 믿으세요.\n' > input/subtitles.txt
+
+      - name: Create Shorts
+        run: |
+          python video_engine.py \
+            --input input/sample.mp4 \
+            --output output/shorts_final.mp4 \
+            --duration 30 \
+            --subtitles input/subtitles.txt
+
+      - name: Upload Shorts Video
+        uses: actions/upload-artifact@v4
+        with:
+          name: shorts-video
+          path: output/shorts_final.mp4
+          if-no-files-found: error
+          retention-days: 7
