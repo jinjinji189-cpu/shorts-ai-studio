@@ -512,7 +512,11 @@ def create_image(plan, index, reference=None):
             "tag": "hero"
         }]
 
+    
+    payload.setdefault("referenceImages", [])
+
     url = runway_task("text_to_image", payload)
+
 
     path = OUT / f"scene_{index + 1}.jpg"
     download(url, path)
