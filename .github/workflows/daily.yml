@@ -3,11 +3,6 @@ name: Daily Shorts AI
 
 on:
   workflow_dispatch:
-    inputs:
-      topic:
-        description: '영상 주제 (영어)'
-        required: false
-        default: 'kitten'
   schedule:
     - cron: '0 23 * * *'
 
@@ -19,9 +14,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  search:
+  create-shorts:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -36,17 +31,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-nanum
-          pip install requests
+          pip install requests edge-tts
 
-      - name: Search YouTube
+      - name: Search YouTube Trends
         continue-on-error: true
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python engine.py
 
-      - name: Download Wikimedia Video
-        env:
-          TOPIC: ${{ inputs.topic || 'kitten' }}
+      - name: AI Director Create Premium Shorts
         run: |
           mkdir -p input output
 
@@ -55,318 +48,415 @@ jobs:
           import re
           import html
           import json
-          import random
+          import math
+          import wave
+          import struct
+          import asyncio
           import requests
           import subprocess
+          import edge_tts
           from pathlib import Path
 
-          topic = os.environ.get("TOPIC", "kitten")
-          api = "https://commons.wikimedia.org/w/api.php"
+          WIDTH = 1080
+          HEIGHT = 1920
+          SCENE_TIME = 6
+          VOICE = "ko-KR-SunHiNeural"
+
+          scenes = [
+              {
+                  "query": "ocean waves sunset",
+                  "fallback": "ocean waves",
+                  "text": "우리는 영원히 살 것처럼 오늘을 미룹니다.",
+                  "caption": "우리는 영원히 살 것처럼\n오늘을 미룹니다."
+              },
+              {
+                  "query": "rain window",
+                  "fallback": "rain falling",
+                  "text": "더 나은 내일을 기다리느라 오늘을 잊습니다.",
+                  "caption": "더 나은 내일을 기다리느라\n오늘을 잊습니다."
+              },
+              {
+                  "query": "autumn forest",
+                  "fallback": "forest trees",
+                  "text": "시간은 아무 말 없이 모든 것을 데려갑니다.",
+                  "caption": "시간은 아무 말 없이\n모든 것을 데려갑니다."
+              },
+              {
+                  "query": "mountain clouds",
+                  "fallback": "clouds sky",
+                  "text": "언젠가 그리워할 날이 바로 오늘일지 모릅니다.",
+                  "caption": "언젠가 그리워할 날이\n바로 오늘일지 모릅니다."
+              },
+              {
+                  "query": "sunrise landscape",
+                  "fallback": "sunset sky",
+                  "text": "그러니 삶을 미루지 마세요. 오늘은 다시 오지 않습니다.",
+                  "caption": "삶을 미루지 마세요.\n오늘은 다시 오지 않습니다."
+              }
+          ]
 
           session = requests.Session()
+
           session.headers.update({
               "User-Agent": (
-                  "ShortsAIStudio/1.0 "
+                  "ShortsAIStudio/2.0 "
                   "(https://github.com/jinjinji189-cpu/shorts-ai-studio)"
               )
           })
+
+          API = "https://commons.wikimedia.org/w/api.php"
+
+          used = set()
+          credits = []
+
+          def run(cmd):
+              subprocess.run(cmd, check=True)
 
           def clean(value):
               return html.unescape(
                   re.sub(r"<[^>]+>", "", value or "")
               ).strip()
 
-          def getmeta(meta, key):
+          def meta_value(meta, key):
               return clean(
                   meta.get(key, {}).get("value", "")
               )
 
-          print("Searching Wikimedia:", topic)
+          def duration(path):
+              result = subprocess.check_output([
+                  "ffprobe", "-v", "error",
+                  "-show_entries", "format=duration",
+                  "-of", "default=noprint_wrappers=1:nokey=1",
+                  str(path)
+              ], text=True)
+              return float(result.strip())
 
-          params = {
-              "action": "query",
-              "generator": "search",
-              "gsrsearch": topic + " filetype:video",
-              "gsrnamespace": 6,
-              "gsrlimit": 40,
-              "prop": "imageinfo",
-              "iiprop": "url|mime|size|extmetadata",
-              "format": "json",
-              "formatversion": 2
-          }
+          def search_video(query):
+              response = session.get(
+                  API,
+                  params={
+                      "action": "query",
+                      "generator": "search",
+                      "gsrsearch": query + " filetype:video",
+                      "gsrnamespace": 6,
+                      "gsrlimit": 50,
+                      "prop": "imageinfo",
+                      "iiprop": "url|mime|size|extmetadata",
+                      "format": "json",
+                      "formatversion": 2
+                  },
+                  timeout=60
+              )
 
-          response = session.get(
-              api, params=params, timeout=60
-          )
-          response.raise_for_status()
+              response.raise_for_status()
 
-          data = response.json()
+              data = response.json()
 
-          if "error" in data:
-              raise RuntimeError(str(data["error"]))
+              if "error" in data:
+                  raise RuntimeError(str(data["error"]))
 
-          pages = data.get("query", {}).get("pages", [])
+              candidates = []
 
-          random.shuffle(pages)
+              for page in data.get(
+                  "query", {}
+              ).get("pages", []):
 
-          selected = None
+                  if page.get("pageid") in used:
+                      continue
 
-          for page in pages:
-              infos = page.get("imageinfo", [])
+                  infos = page.get("imageinfo", [])
 
-              if not infos:
-                  continue
+                  if not infos:
+                      continue
 
-              info = infos[0]
-              mime = info.get("mime", "")
+                  info = infos[0]
 
-              if mime not in [
-                  "video/webm",
-                  "video/mp4",
-                  "video/ogg"
+                  if info.get("mime") not in [
+                      "video/mp4",
+                      "video/webm",
+                      "video/ogg"
+                  ]:
+                      continue
+
+                  if not info.get("url"):
+                      continue
+
+                  size = info.get("size", 0)
+
+                  if size > 120000000:
+                      continue
+
+                  w = info.get("width", 0)
+                  h = info.get("height", 0)
+
+                  if min(w, h) < 480:
+                      continue
+
+                  meta = info.get("extmetadata", {})
+
+                  license_name = meta_value(
+                      meta, "LicenseShortName"
+                  )
+
+                  license_url = meta_value(
+                      meta, "LicenseUrl"
+                  )
+
+                  license_lower = license_name.lower()
+
+                  allowed = (
+                      license_lower == "public domain"
+                      or license_lower.startswith("cc0")
+                      or re.fullmatch(
+                          r"cc by [0-9.]+",
+                          license_lower
+                      ) is not None
+                  )
+
+                  if not allowed:
+                      continue
+
+                  artist = meta_value(meta, "Artist")
+
+                  if license_lower.startswith("cc by"):
+                      if not artist or not license_url:
+                          continue
+
+                  score = min(w, h)
+
+                  if h > w:
+                      score += 500
+
+                  candidates.append(
+                      (score, page, info, meta)
+                  )
+
+              candidates.sort(
+                  key=lambda x: x[0],
+                  reverse=True
+              )
+
+              return candidates
+
+          def download_scene(index, scene):
+
+              for query in [
+                  scene["query"],
+                  scene["fallback"]
               ]:
-                  continue
 
-              if info.get("size", 0) > 150000000:
-                  continue
+                  print("Searching scene:", query)
 
-              meta = info.get("extmetadata", {})
-              license_name = getmeta(
-                  meta, "LicenseShortName"
-              )
+                  candidates = search_video(query)
 
-              license_url = getmeta(
-                  meta, "LicenseUrl"
-              )
+                  for _, page, info, meta in candidates[:12]:
 
-              license_lower = license_name.lower()
+                      source = Path(
+                          f"input/source_{index}.video"
+                      )
 
-              allowed = (
-                  license_lower == "public domain"
-                  or license_lower.startswith("cc0")
-                  or re.fullmatch(
-                      r"cc by [0-9.]+",
-                      license_lower
-                  ) is not None
-              )
+                      try:
+                          with session.get(
+                              info["url"],
+                              stream=True,
+                              timeout=(20, 120)
+                          ) as response:
 
-              if not allowed:
-                  continue
+                              response.raise_for_status()
 
-              if not info.get("url"):
-                  continue
+                              with source.open("wb") as f:
+                                  for chunk in response.iter_content(
+                                      chunk_size=1024*1024
+                                  ):
+                                      if chunk:
+                                          f.write(chunk)
 
-              artist = getmeta(meta, "Artist")
+                          length = duration(source)
 
-              if (
-                  license_lower.startswith("cc by")
-                  and (not artist or not license_url)
-              ):
-                  continue
+                          if length < SCENE_TIME:
+                              source.unlink(missing_ok=True)
+                              continue
 
-              selected = (page, info, meta)
-              break
+                          used.add(page["pageid"])
 
-          if selected is None:
+                          credits.append({
+                              "scene": index + 1,
+                              "title": page.get("title", ""),
+                              "creator": meta_value(
+                                  meta, "Artist"
+                              ),
+                              "license": meta_value(
+                                  meta, "LicenseShortName"
+                              ),
+                              "license_url": meta_value(
+                                  meta, "LicenseUrl"
+                              ),
+                              "source": info.get(
+                                  "descriptionurl", ""
+                              ),
+                              "changes": (
+                                  "Trimmed, resized, "
+                                  "color adjusted, captions "
+                                  "and narration added"
+                              )
+                          })
+
+                          print(
+                              "Selected:",
+                              page.get("title")
+                          )
+
+                          return source, length
+
+                      except Exception as error:
+                          print("Skipping:", str(error))
+                          source.unlink(missing_ok=True)
+
               raise RuntimeError(
-                  "No suitable licensed video found. "
-                  "Try another topic such as cat, "
-                  "bird, butterfly or waterfall."
+                  "No suitable licensed video for scene "
+                  + str(index + 1)
               )
 
-          page, info, meta = selected
+          async def create_voice(index, text):
+              speech = edge_tts.Communicate(
+                  text,
+                  VOICE,
+                  rate="+5%",
+                  pitch="+0Hz"
+              )
 
-          print("Selected:", page.get("title"))
-          print("License:", getmeta(
-              meta, "LicenseShortName"
-          ))
+              await speech.save(
+                  f"input/voice_{index}.mp3"
+              )
 
-          with session.get(
-              info["url"],
-              stream=True,
-              timeout=(20, 120)
-          ) as download:
+          def create_subtitles(index, caption):
 
-              download.raise_for_status()
+              content = (
+                  "1\n"
+                  "00:00:00,000 --> 00:00:06,000\n"
+                  + caption + "\n\n"
+              )
 
-              with open("input/source_video", "wb") as out:
-                  for chunk in download.iter_content(
-                      chunk_size=1024 * 1024
-                  ):
-                      if chunk:
-                          out.write(chunk)
+              Path(
+                  f"input/caption_{index}.srt"
+              ).write_text(
+                  content,
+                  encoding="utf-8"
+              )
 
-          subprocess.run([
+          for i, scene in enumerate(scenes):
+
+              print("Creating scene", i + 1)
+
+              source, length = download_scene(
+                  i, scene
+              )
+
+              asyncio.run(
+                  create_voice(i, scene["text"])
+              )
+
+              create_subtitles(
+                  i, scene["caption"]
+              )
+
+              voice_file = f"input/voice_{i}.mp3"
+
+              voice_length = duration(voice_file)
+
+              speed = max(
+                  1.0,
+                  voice_length / 5.5
+              )
+
+              start = min(
+                  2.0,
+                  max(0, (length - 6) / 3)
+              )
+
+              style = (
+                  "FontName=NanumGothic,"
+                  "FontSize=17,"
+                  "Bold=1,"
+                  "PrimaryColour=&H00FFFFFF,"
+                  "OutlineColour=&H00141414,"
+                  "BorderStyle=1,"
+                  "Outline=1.5,"
+                  "Shadow=0.7,"
+                  "Alignment=2,"
+                  "MarginV=55,"
+                  "MarginL=25,"
+                  "MarginR=25"
+              )
+
+              vf = (
+                  "[0:v]split=2[bg][fg];"
+                  "[bg]scale=1080:1920:"
+                  "force_original_aspect_ratio=increase,"
+                  "crop=1080:1920,"
+                  "gblur=sigma=35,"
+                  "eq=brightness=-0.18[background];"
+                  "[fg]scale=1080:1920:"
+                  "force_original_aspect_ratio=decrease:"
+                  "force_divisible_by=2,"
+                  "eq=contrast=1.05:saturation=1.08"
+                  "[foreground];"
+                  "[background][foreground]"
+                  "overlay=(W-w)/2:(H-h)/2,"
+                  "setsar=1,fps=30,"
+                  "fade=t=in:st=0:d=0.2,"
+                  "fade=t=out:st=5.8:d=0.2,"
+                  f"subtitles=input/caption_{i}.srt:"
+                  f"force_style='{style}'[video];"
+                  "[1:a]"
+                  f"atempo={speed:.4f},"
+                  "adelay=200:all=1,"
+                  "apad,"
+                  "aresample=44100[audio]"
+              )
+
+              run([
+                  "ffmpeg", "-y",
+                  "-ss", str(start),
+                  "-i", str(source),
+                  "-i", voice_file,
+                  "-filter_complex", vf,
+                  "-map", "[video]",
+                  "-map", "[audio]",
+                  "-t", "6",
+                  "-c:v", "libx264",
+                  "-preset", "fast",
+                  "-crf", "20",
+                  "-pix_fmt", "yuv420p",
+                  "-c:a", "aac",
+                  "-ar", "44100",
+                  "-ac", "2",
+                  "-b:a", "192k",
+                  f"input/scene_{i}.mp4"
+              ])
+
+          concat = "\n".join(
+              f"file 'scene_{i}.mp4'"
+              for i in range(len(scenes))
+          )
+
+          Path("input/concat.txt").write_text(
+              concat,
+              encoding="utf-8"
+          )
+
+          run([
               "ffmpeg", "-y",
-              "-i", "input/source_video",
-              "-an",
-              "-vf",
-              "scale=1080:1920:force_original_aspect_ratio=decrease,"
-              "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,"
-              "setsar=1",
-              "-c:v", "libx264",
-              "-preset", "fast",
-              "-pix_fmt", "yuv420p",
-              "input/sample.mp4"
-          ], check=True)
+              "-f", "concat",
+              "-safe", "0",
+              "-i", "input/concat.txt",
+              "-c", "copy",
+              "input/combined.mp4"
+          ])
 
-          source = {
-              "topic": topic,
-              "title": page.get("title", ""),
-              "creator": getmeta(meta, "Artist"),
-              "license": getmeta(
-                  meta, "LicenseShortName"
-              ),
-              "license_url": getmeta(
-                  meta, "LicenseUrl"
-              ),
-              "source": info.get(
-                  "descriptionurl", ""
-              ),
-              "provider": "Wikimedia Commons",
-              "changes": (
-                  "Vertical formatting, trimming, "
-                  "looping and Korean captions"
-              )
-          }
-
-          Path("output/source.json").write_text(
-              json.dumps(
-                  source,
-                  ensure_ascii=False,
-                  indent=2
-              ),
-              encoding="utf-8"
-          )
-
-          credits = (
-              "Title: " + source["title"] + "\n"
-              "Creator: " + source["creator"] + "\n"
-              "License: " + source["license"] + "\n"
-              "License URL: " + source["license_url"] + "\n"
-              "Source: " + source["source"] + "\n"
-              "Changes: " + source["changes"] + "\n"
-          )
-
-          Path("output/credits.txt").write_text(
-              credits, encoding="utf-8"
-          )
-
-          if any(
-              word in topic.lower()
-              for word in ["cat", "kitten"]
-          ):
-              captions = [
-                  "잠깐, 이 귀여운 순간을 보세요!",
-                  "작은 생명이 건네는 따뜻한 위로.",
-                  "바쁜 하루에도 미소는 필요합니다.",
-                  "오늘의 행복을 선물합니다."
-              ]
-          else:
-              captions = [
-                  "잠시 멈춰 이 순간을 바라보세요.",
-                  "세상에는 우리가 놓친 아름다움이 있습니다.",
-                  "평범한 순간에도 특별함은 숨어 있습니다.",
-                  "오늘도 당신의 하루가 빛나기를."
-              ]
-
-          times = [
-              ("00:00:00,000", "00:00:07,000"),
-              ("00:00:07,000", "00:00:14,000"),
-              ("00:00:14,000", "00:00:22,000"),
-              ("00:00:22,000", "00:00:30,000")
-          ]
-
-          subtitles = ""
-
-          for i, (caption, timing) in enumerate(
-              zip(captions, times), 1
-          ):
-              subtitles += (
-                  f"{i}\n"
-                  f"{timing[0]} --> {timing[1]}\n"
-                  f"{caption}\n\n"
-              )
-
-          Path("input/subtitles.srt").write_text(
-              subtitles, encoding="utf-8"
-          )
-
-          print("Video and captions ready")
-          PY
-
-      - name: Create Shorts
-        run: |
-          ffmpeg -y \
-            -stream_loop -1 \
-            -i input/sample.mp4 \
-            -t 30 \
-            -vf "subtitles=input/subtitles.srt:force_style='FontName=NanumGothic,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=35'" \
-            -c:v libx264 \
-            -preset fast \
-            -crf 23 \
-            -r 30 \
-            -pix_fmt yuv420p \
-            -movflags +faststart \
-            output/shorts_final.mp4
-
-      - name: Add AI Voice and Music
-        run: |
-          pip install edge-tts
-
-          python - <<'PY'
-          import asyncio
-          import edge_tts
-          import re
-          import math
-          import wave
-          import struct
-          import subprocess
-          from pathlib import Path
-
-          voice = "ko-KR-SunHiNeural"
-
-          text = Path("input/subtitles.srt").read_text(
-              encoding="utf-8"
-          )
-
-          blocks = re.split(r"\n\s*\n", text.strip())
-
-          captions = []
-          starts = []
-
-          def seconds(value):
-              h, m, s = value.replace(",", ".").split(":")
-              return float(h)*3600 + float(m)*60 + float(s)
-
-          for block in blocks:
-              lines = block.splitlines()
-
-              if len(lines) >= 3:
-                  start = lines[1].split(" --> ")[0]
-                  starts.append(seconds(start))
-                  captions.append(" ".join(lines[2:]))
-
-          if not captions:
-              raise RuntimeError("No captions found")
-
-          async def create_voice():
-              for i, caption in enumerate(captions):
-                  tts = edge_tts.Communicate(
-                      caption,
-                      voice,
-                      rate="-5%",
-                      pitch="+0Hz"
-                  )
-                  await tts.save(
-                      f"input/voice_{i}.mp3"
-                  )
-
-          asyncio.run(create_voice())
-
-          # Create original soft piano-style music
+          # Original ambient background music
           sample_rate = 22050
-          duration = 30
+          total_time = 30
 
           chords = [
               [261.63, 329.63, 392.00],
@@ -375,123 +465,156 @@ jobs:
               [196.00, 246.94, 293.66]
           ]
 
-          audio = bytearray()
+          music = bytearray()
 
-          for n in range(sample_rate * duration):
+          for n in range(
+              sample_rate * total_time
+          ):
+
               t = n / sample_rate
-              chord = chords[int(t / 4) % 4]
-              local = t % 4
+              chord = chords[int(t / 6) % 4]
+              local = t % 6
               value = 0.0
 
               for j, freq in enumerate(chord):
-                  age = local - j * 0.5
+
+                  age = local - j * 0.8
 
                   if age >= 0:
+
                       envelope = (
-                          min(age / 0.04, 1)
-                          * math.exp(-age * 0.9)
+                          min(age / 0.15, 1)
+                          * math.exp(-age * 0.65)
                       )
 
                       value += envelope * (
-                          math.sin(2*math.pi*freq*age)
-                          + 0.2*math.sin(
-                              4*math.pi*freq*age
+                          math.sin(
+                              2 * math.pi * freq * age
+                          )
+                          + 0.12 * math.sin(
+                              4 * math.pi * freq * age
                           )
                       )
 
-              fade = min(1, t/1.5, (30-t)/2)
-              sample = int(value * 1800 * fade)
-              sample = max(-32767, min(32767, sample))
-              audio.extend(struct.pack("<h", sample))
+              fade = min(
+                  1, t / 2, (30 - t) / 3
+              )
 
-          with wave.open("input/music.wav", "wb") as f:
+              sample = int(
+                  value * 1800 * fade
+              )
+
+              sample = max(
+                  -32767,
+                  min(32767, sample)
+              )
+
+              music.extend(
+                  struct.pack("<h", sample)
+              )
+
+          with wave.open(
+              "input/music.wav", "wb"
+          ) as f:
+
               f.setnchannels(1)
               f.setsampwidth(2)
               f.setframerate(sample_rate)
-              f.writeframes(audio)
+              f.writeframes(music)
 
-          # Mix narration with background music
-          cmd = [
+          run([
               "ffmpeg", "-y",
-              "-i", "output/shorts_final.mp4"
-          ]
-
-          for i in range(len(captions)):
-              cmd += ["-i", f"input/voice_{i}.mp3"]
-
-          cmd += ["-i", "input/music.wav"]
-
-          filters = []
-          labels = []
-
-          for i, start in enumerate(starts):
-              delay = int(start * 1000)
-              label = f"v{i}"
-
-              filters.append(
-                  f"[{i+1}:a]"
-                  f"adelay={delay}:all=1,"
-                  f"volume=1.0[{label}]"
-              )
-
-              labels.append(f"[{label}]")
-
-          music_index = len(captions) + 1
-
-          filters.append(
-              f"[{music_index}:a]"
-              "volume=0.25[music]"
-          )
-
-          labels.append("[music]")
-
-          filters.append(
-              "".join(labels)
-              + f"amix=inputs={len(labels)}:"
-              "duration=longest:normalize=0,"
-              "alimiter=limit=0.95[audio]"
-          )
-
-          cmd += [
-              "-filter_complex", ";".join(filters),
-              "-map", "0:v:0",
+              "-i", "input/combined.mp4",
+              "-i", "input/music.wav",
+              "-filter_complex",
+              "[0:a]volume=1.0[voice];"
+              "[1:a]volume=0.4[music];"
+              "[voice][music]"
+              "amix=inputs=2:"
+              "duration=first:normalize=0,"
+              "alimiter=limit=0.95[audio]",
+              "-map", "0:v",
               "-map", "[audio]",
               "-c:v", "copy",
               "-c:a", "aac",
               "-b:a", "192k",
               "-t", "30",
               "-movflags", "+faststart",
-              "output/shorts_with_audio.mp4"
-          ]
-
-          subprocess.run(cmd, check=True)
-
-          Path("output/shorts_with_audio.mp4").replace(
               "output/shorts_final.mp4"
+          ])
+
+          Path("output/source.json").write_text(
+              json.dumps(
+                  credits,
+                  ensure_ascii=False,
+                  indent=2
+              ),
+              encoding="utf-8"
           )
 
-          print("AI voice and music added successfully")
+          credit_text = ""
+
+          for item in credits:
+
+              credit_text += (
+                  f"Scene {item['scene']}\n"
+                  f"Title: {item['title']}\n"
+                  f"Creator: {item['creator']}\n"
+                  f"License: {item['license']}\n"
+                  f"License URL: {item['license_url']}\n"
+                  f"Source: {item['source']}\n"
+                  f"Changes: {item['changes']}\n\n"
+              )
+
+          Path("output/credits.txt").write_text(
+              credit_text,
+              encoding="utf-8"
+          )
+
+          metadata = {
+              "channel": "퇴근 후 철학",
+              "title": "우리는 영원히 살 것처럼 오늘을 미룹니다",
+              "thumbnail": "오늘은 다시 오지 않는다",
+              "description": (
+                  "언젠가 가장 그리워할 날이 "
+                  "어쩌면 지금 우리가 살아가는 "
+                  "오늘일지도 모릅니다.\n\n"
+                  "시간의 유한함과 삶의 의미를 "
+                  "생각하는 30초.\n\n"
+                  "#퇴근후철학 #인생명언 "
+                  "#시간 #삶의지혜 #감성쇼츠\n\n"
+                  "영상 출처:\n" + credit_text
+              )
+          }
+
+          Path("output/metadata.json").write_text(
+              json.dumps(
+                  metadata,
+                  ensure_ascii=False,
+                  indent=2
+              ),
+              encoding="utf-8"
+          )
+
+          print("Premium Shorts completed!")
           PY
 
-      - name: Verify Video
+      - name: Verify Final Video
         run: |
           test -s output/shorts_final.mp4
 
           ffprobe -v error \
+            -show_entries stream=codec_type,width,height \
             -show_entries format=duration,size \
-            -of json \
-            output/shorts_final.mp4
+            -of json output/shorts_final.mp4
 
       - name: Upload Shorts Video
         uses: actions/upload-artifact@v4
         with:
-          name: shorts-video
-          path: |
-            output/shorts_final.mp4
-            output/source.json
-            output/credits.txt
+          name: shorts-video-v2
+          path: output/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
       - name: Save Results
         run: |
@@ -506,12 +629,15 @@ jobs:
           cp output/credits.txt \
             docs/videos/credits.txt
 
+          cp output/metadata.json \
+            docs/videos/metadata.json
+
           git config user.name "Shorts AI Bot"
           git config user.email "actions@github.com"
 
           git add docs/
 
           git diff --cached --quiet || \
-            git commit -m "Update Wikimedia Shorts video"
+            git commit -m "Create premium Shorts V2"
 
           git push
