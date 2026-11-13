@@ -71,6 +71,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shorts-video
+
+          
+      - name: Save MP4 to GitHub
+        run: |
+          mkdir -p docs/videos
+          cp output/shorts_final.mp4 docs/videos/shorts_final.mp4
+          git config user.name "Shorts AI Bot"
+          git config user.email "actions@github.com"
+          git add docs/videos/
+          git diff --cached --quiet || git commit -m "Save generated Shorts video"
+          git push
+
           path: output/shorts_final.mp4
           if-no-files-found: error
           retention-days: 7
