@@ -513,7 +513,12 @@ def create_image(plan, index, reference=None):
         }]
 
     
-    payload.setdefault("referenceImages", [])
+   
+    if not payload.get("referenceImages"):
+        payload["model"] = "gen4_image"
+        payload.pop("referenceImages", None)
+    else:
+        payload["model"] = "gen4_image_turbo"
 
     url = runway_task("text_to_image", payload)
 
