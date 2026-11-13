@@ -310,6 +310,169 @@ jobs:
             -movflags +faststart \
             output/shorts_final.mp4
 
+      - name: Add AI Voice and Music
+        run: |
+          pip install edge-tts
+
+          python - <<'PY'
+          import asyncio
+          import edge_tts
+          import re
+          import math
+          import wave
+          import struct
+          import subprocess
+          from pathlib import Path
+
+          voice = "ko-KR-SunHiNeural"
+
+          text = Path("input/subtitles.srt").read_text(
+              encoding="utf-8"
+          )
+
+          blocks = re.split(r"\n\s*\n", text.strip())
+
+          captions = []
+          starts = []
+
+          def seconds(value):
+              h, m, s = value.replace(",", ".").split(":")
+              return float(h)*3600 + float(m)*60 + float(s)
+
+          for block in blocks:
+              lines = block.splitlines()
+
+              if len(lines) >= 3:
+                  start = lines[1].split(" --> ")[0]
+                  starts.append(seconds(start))
+                  captions.append(" ".join(lines[2:]))
+
+          if not captions:
+              raise RuntimeError("No captions found")
+
+          async def create_voice():
+              for i, caption in enumerate(captions):
+                  tts = edge_tts.Communicate(
+                      caption,
+                      voice,
+                      rate="-5%",
+                      pitch="+0Hz"
+                  )
+                  await tts.save(
+                      f"input/voice_{i}.mp3"
+                  )
+
+          asyncio.run(create_voice())
+
+          # Create original soft piano-style music
+          sample_rate = 22050
+          duration = 30
+
+          chords = [
+              [261.63, 329.63, 392.00],
+              [220.00, 261.63, 329.63],
+              [174.61, 220.00, 261.63],
+              [196.00, 246.94, 293.66]
+          ]
+
+          audio = bytearray()
+
+          for n in range(sample_rate * duration):
+              t = n / sample_rate
+              chord = chords[int(t / 4) % 4]
+              local = t % 4
+              value = 0.0
+
+              for j, freq in enumerate(chord):
+                  age = local - j * 0.5
+
+                  if age >= 0:
+                      envelope = (
+                          min(age / 0.04, 1)
+                          * math.exp(-age * 0.9)
+                      )
+
+                      value += envelope * (
+                          math.sin(2*math.pi*freq*age)
+                          + 0.2*math.sin(
+                              4*math.pi*freq*age
+                          )
+                      )
+
+              fade = min(1, t/1.5, (30-t)/2)
+              sample = int(value * 1800 * fade)
+              sample = max(-32767, min(32767, sample))
+              audio.extend(struct.pack("<h", sample))
+
+          with wave.open("input/music.wav", "wb") as f:
+              f.setnchannels(1)
+              f.setsampwidth(2)
+              f.setframerate(sample_rate)
+              f.writeframes(audio)
+
+          # Mix narration with background music
+          cmd = [
+              "ffmpeg", "-y",
+              "-i", "output/shorts_final.mp4"
+          ]
+
+          for i in range(len(captions)):
+              cmd += ["-i", f"input/voice_{i}.mp3"]
+
+          cmd += ["-i", "input/music.wav"]
+
+          filters = []
+          labels = []
+
+          for i, start in enumerate(starts):
+              delay = int(start * 1000)
+              label = f"v{i}"
+
+              filters.append(
+                  f"[{i+1}:a]"
+                  f"adelay={delay}:all=1,"
+                  f"volume=1.0[{label}]"
+              )
+
+              labels.append(f"[{label}]")
+
+          music_index = len(captions) + 1
+
+          filters.append(
+              f"[{music_index}:a]"
+              "volume=0.25[music]"
+          )
+
+          labels.append("[music]")
+
+          filters.append(
+              "".join(labels)
+              + f"amix=inputs={len(labels)}:"
+              "duration=longest:normalize=0,"
+              "alimiter=limit=0.95[audio]"
+          )
+
+          cmd += [
+              "-filter_complex", ";".join(filters),
+              "-map", "0:v:0",
+              "-map", "[audio]",
+              "-c:v", "copy",
+              "-c:a", "aac",
+              "-b:a", "192k",
+              "-t", "30",
+              "-movflags", "+faststart",
+              "output/shorts_with_audio.mp4"
+          ]
+
+          subprocess.run(cmd, check=True)
+
+          Path("output/shorts_with_audio.mp4").replace(
+              "output/shorts_final.mp4"
+          )
+
+          print("AI voice and music added successfully")
+          PY
+
       - name: Verify Video
         run: |
           test -s output/shorts_final.mp4
