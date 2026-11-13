@@ -1,7 +1,13 @@
+
 name: Daily Shorts AI
 
 on:
   workflow_dispatch:
+    inputs:
+      topic:
+        description: '영상 주제 (영어)'
+        required: false
+        default: 'kitten'
   schedule:
     - cron: '0 23 * * *'
 
@@ -15,7 +21,7 @@ concurrency:
 jobs:
   search:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -26,63 +32,323 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install FFmpeg
+      - name: Install Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-nanum
+          pip install requests
 
-      
       - name: Search YouTube
-        id: youtube_search
         continue-on-error: true
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python engine.py
 
-      
-      - name: Save results
-        if: steps.youtube_search.outcome == 'success'
-        run: |
-          git config user.name "Shorts AI Bot"
-          git config user.email "actions@github.com"
-          git add docs/
-          git diff --cached --quiet || git commit -m "Update daily videos"
-          git push
-
-
-      - name: Prepare test video
+      - name: Download Wikimedia Video
+        env:
+          TOPIC: ${{ inputs.topic || 'kitten' }}
         run: |
           mkdir -p input output
-          ffmpeg -y -f lavfi \
-            -i color=c=black:s=1080x1920:r=30 \
-            -t 5 -c:v libx264 \
-            -pix_fmt yuv420p input/sample.mp4
-          printf '오늘도 새로운 시작입니다.\n당신의 가능성을 믿으세요.\n' > input/subtitles.txt
+
+          python - <<'PY'
+          import os
+          import re
+          import html
+          import json
+          import random
+          import requests
+          import subprocess
+          from pathlib import Path
+
+          topic = os.environ.get("TOPIC", "kitten")
+          api = "https://commons.wikimedia.org/w/api.php"
+
+          session = requests.Session()
+          session.headers.update({
+              "User-Agent": (
+                  "ShortsAIStudio/1.0 "
+                  "(https://github.com/jinjinji189-cpu/shorts-ai-studio)"
+              )
+          })
+
+          def clean(value):
+              return html.unescape(
+                  re.sub(r"<[^>]+>", "", value or "")
+              ).strip()
+
+          def getmeta(meta, key):
+              return clean(
+                  meta.get(key, {}).get("value", "")
+              )
+
+          print("Searching Wikimedia:", topic)
+
+          params = {
+              "action": "query",
+              "generator": "search",
+              "gsrsearch": topic + " filetype:video",
+              "gsrnamespace": 6,
+              "gsrlimit": 40,
+              "prop": "imageinfo",
+              "iiprop": "url|mime|size|extmetadata",
+              "format": "json",
+              "formatversion": 2
+          }
+
+          response = session.get(
+              api, params=params, timeout=60
+          )
+          response.raise_for_status()
+
+          data = response.json()
+
+          if "error" in data:
+              raise RuntimeError(str(data["error"]))
+
+          pages = data.get("query", {}).get("pages", [])
+
+          random.shuffle(pages)
+
+          selected = None
+
+          for page in pages:
+              infos = page.get("imageinfo", [])
+
+              if not infos:
+                  continue
+
+              info = infos[0]
+              mime = info.get("mime", "")
+
+              if mime not in [
+                  "video/webm",
+                  "video/mp4",
+                  "video/ogg"
+              ]:
+                  continue
+
+              if info.get("size", 0) > 150000000:
+                  continue
+
+              meta = info.get("extmetadata", {})
+              license_name = getmeta(
+                  meta, "LicenseShortName"
+              )
+
+              license_url = getmeta(
+                  meta, "LicenseUrl"
+              )
+
+              license_lower = license_name.lower()
+
+              allowed = (
+                  license_lower == "public domain"
+                  or license_lower.startswith("cc0")
+                  or re.fullmatch(
+                      r"cc by [0-9.]+",
+                      license_lower
+                  ) is not None
+              )
+
+              if not allowed:
+                  continue
+
+              if not info.get("url"):
+                  continue
+
+              artist = getmeta(meta, "Artist")
+
+              if (
+                  license_lower.startswith("cc by")
+                  and (not artist or not license_url)
+              ):
+                  continue
+
+              selected = (page, info, meta)
+              break
+
+          if selected is None:
+              raise RuntimeError(
+                  "No suitable licensed video found. "
+                  "Try another topic such as cat, "
+                  "bird, butterfly or waterfall."
+              )
+
+          page, info, meta = selected
+
+          print("Selected:", page.get("title"))
+          print("License:", getmeta(
+              meta, "LicenseShortName"
+          ))
+
+          with session.get(
+              info["url"],
+              stream=True,
+              timeout=(20, 120)
+          ) as download:
+
+              download.raise_for_status()
+
+              with open("input/source_video", "wb") as out:
+                  for chunk in download.iter_content(
+                      chunk_size=1024 * 1024
+                  ):
+                      if chunk:
+                          out.write(chunk)
+
+          subprocess.run([
+              "ffmpeg", "-y",
+              "-i", "input/source_video",
+              "-an",
+              "-vf",
+              "scale=1080:1920:force_original_aspect_ratio=decrease,"
+              "pad=1080:1920:(ow-iw)/2:(oh-ih)/2,"
+              "setsar=1",
+              "-c:v", "libx264",
+              "-preset", "fast",
+              "-pix_fmt", "yuv420p",
+              "input/sample.mp4"
+          ], check=True)
+
+          source = {
+              "topic": topic,
+              "title": page.get("title", ""),
+              "creator": getmeta(meta, "Artist"),
+              "license": getmeta(
+                  meta, "LicenseShortName"
+              ),
+              "license_url": getmeta(
+                  meta, "LicenseUrl"
+              ),
+              "source": info.get(
+                  "descriptionurl", ""
+              ),
+              "provider": "Wikimedia Commons",
+              "changes": (
+                  "Vertical formatting, trimming, "
+                  "looping and Korean captions"
+              )
+          }
+
+          Path("output/source.json").write_text(
+              json.dumps(
+                  source,
+                  ensure_ascii=False,
+                  indent=2
+              ),
+              encoding="utf-8"
+          )
+
+          credits = (
+              "Title: " + source["title"] + "\n"
+              "Creator: " + source["creator"] + "\n"
+              "License: " + source["license"] + "\n"
+              "License URL: " + source["license_url"] + "\n"
+              "Source: " + source["source"] + "\n"
+              "Changes: " + source["changes"] + "\n"
+          )
+
+          Path("output/credits.txt").write_text(
+              credits, encoding="utf-8"
+          )
+
+          if any(
+              word in topic.lower()
+              for word in ["cat", "kitten"]
+          ):
+              captions = [
+                  "잠깐, 이 귀여운 순간을 보세요!",
+                  "작은 생명이 건네는 따뜻한 위로.",
+                  "바쁜 하루에도 미소는 필요합니다.",
+                  "오늘의 행복을 선물합니다."
+              ]
+          else:
+              captions = [
+                  "잠시 멈춰 이 순간을 바라보세요.",
+                  "세상에는 우리가 놓친 아름다움이 있습니다.",
+                  "평범한 순간에도 특별함은 숨어 있습니다.",
+                  "오늘도 당신의 하루가 빛나기를."
+              ]
+
+          times = [
+              ("00:00:00,000", "00:00:07,000"),
+              ("00:00:07,000", "00:00:14,000"),
+              ("00:00:14,000", "00:00:22,000"),
+              ("00:00:22,000", "00:00:30,000")
+          ]
+
+          subtitles = ""
+
+          for i, (caption, timing) in enumerate(
+              zip(captions, times), 1
+          ):
+              subtitles += (
+                  f"{i}\n"
+                  f"{timing[0]} --> {timing[1]}\n"
+                  f"{caption}\n\n"
+              )
+
+          Path("input/subtitles.srt").write_text(
+              subtitles, encoding="utf-8"
+          )
+
+          print("Video and captions ready")
+          PY
 
       - name: Create Shorts
         run: |
-          python video_engine.py \
-            --input input/sample.mp4 \
-            --output output/shorts_final.mp4 \
-            --duration 30 \
-            --subtitles input/subtitles.txt
+          ffmpeg -y \
+            -stream_loop -1 \
+            -i input/sample.mp4 \
+            -t 30 \
+            -vf "subtitles=input/subtitles.srt:force_style='FontName=NanumGothic,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=35'" \
+            -c:v libx264 \
+            -preset fast \
+            -crf 23 \
+            -r 30 \
+            -pix_fmt yuv420p \
+            -movflags +faststart \
+            output/shorts_final.mp4
+
+      - name: Verify Video
+        run: |
+          test -s output/shorts_final.mp4
+
+          ffprobe -v error \
+            -show_entries format=duration,size \
+            -of json \
+            output/shorts_final.mp4
 
       - name: Upload Shorts Video
         uses: actions/upload-artifact@v4
         with:
           name: shorts-video
-
-          
-      - name: Save MP4 to GitHub
-        run: |
-          mkdir -p docs/videos
-          cp output/shorts_final.mp4 docs/videos/shorts_final.mp4
-          git config user.name "Shorts AI Bot"
-          git config user.email "actions@github.com"
-          git add docs/videos/
-          git diff --cached --quiet || git commit -m "Save generated Shorts video"
-          git push
-
-          path: output/shorts_final.mp4
+          path: |
+            output/shorts_final.mp4
+            output/source.json
+            output/credits.txt
           if-no-files-found: error
           retention-days: 7
+
+      - name: Save Results
+        run: |
+          mkdir -p docs/videos
+
+          cp output/shorts_final.mp4 \
+            docs/videos/shorts_final.mp4
+
+          cp output/source.json \
+            docs/videos/source.json
+
+          cp output/credits.txt \
+            docs/videos/credits.txt
+
+          git config user.name "Shorts AI Bot"
+          git config user.email "actions@github.com"
+
+          git add docs/
+
+          git diff --cached --quiet || \
+            git commit -m "Update Wikimedia Shorts video"
+
+          git push
